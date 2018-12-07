@@ -1,0 +1,48 @@
+####################################################
+        INSTALLING KIBANA ON AWS (REDHAT)
+####################################################
+
+
+# Accept the ElasticSearch GPG Key
+sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+# Create kibana.repo to install from RPM
+nano /etc/yum.repos.d/kibana.repo
+
+# Edit kibana.repo with following text
+echo '[kibana-6.x]
+name=Kibana repository for 6.x packages
+baseurl=https://artifacts.elastic.co/packages/6.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+' | sudo tee /etc/yum.repos.d/kibana.repo
+
+# Install from RPM Repo
+sudo yum -y install kibana
+
+# Non-Secure way to add
+echo '
+elasticsearch.url: "http://ec2-18-197-147-233.eu-central-1.compute.amazonaws.com:9200/" 
+server.host: "0.0.0.0"
+' | sudo tee /etc/kibana/kibana.yml
+
+# Adding Elasticsearch to automatically start on boot up
+sudo chkconfig --add kibana
+
+# Start Kibana 
+sudo service kibana start
+
+# Stop Kibana 
+sudo service kibana stop
+
+# Checking Kibana logs
+tail -f /var/log/kibana/kibana.stdout
+
+# Accessing Kibana
+http://KIBANA_SERVER_URL_OR_IP:5601/ 
+
+
+
