@@ -1,0 +1,63 @@
+####################################################
+        INSTALLING ELASTICSEARCH ON AWS (REDHAT)
+####################################################
+
+
+# Installing Java8 (Minimum 1.8)
+java -version
+sudo yum -y install java-1.8.0-openjdk
+sudo yum -y remove java-1.7.0-openjdk ( Used if older verion of java is exist)
+java -version
+
+
+# Create elasticsearch.repo to install from RPM
+nano /etc/yum.repos.d/elasticsearch.repo
+
+# Edit elasticsearch.repo with following text
+
+cat > /etc/yum.repos.d/elasticsearch.repo << "EOF"
+[elasticsearch-6.x]
+name=Elasticsearch repository for 6.x packages
+baseurl=https://artifacts.elastic.co/packages/6.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+EOF
+
+# Install from RPM Repo
+sudo yum -y install elasticsearch
+
+# Adding Elasticsearch to automatically start on boot up
+sudo chkconfig --add elasticsearch
+
+# Start Elasticsearch
+sudo service elasticsearch start
+
+# Stop Elasticsearch
+sudo service elasticsearch stop
+
+# Accessing Elasticsearch using PublicIP
+echo "network.host: 0.0.0.0" >> /etc/elasticsearch/elasticsearch.yml
+curl localhost:9200
+
+# You should able to see this
+{
+  "name" : "Gr7qXpl",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "XouOh_loQ62c3nHcDxbDOQ",
+  "version" : {
+    "number" : "6.3.1",
+    "build_flavor" : "default",
+    "build_type" : "rpm",
+    "build_hash" : "eb782d0",
+    "build_date" : "2018-06-29T21:59:26.107521Z",
+    "build_snapshot" : false,
+    "lucene_version" : "7.3.1",
+    "minimum_wire_compatibility_version" : "5.6.0",
+    "minimum_index_compatibility_version" : "5.0.0"
+  },
+  "tagline" : "You Know, for Search"
+}
+
