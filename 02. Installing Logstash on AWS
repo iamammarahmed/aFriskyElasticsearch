@@ -1,0 +1,78 @@
+####################################################
+        INSTALLING LOGSTASH ON AWS (REDHAT)
+####################################################
+
+
+# Installing Java8 (Minimum 1.8)
+java -version
+sudo yum -y install java-1.8.0-openjdk
+sudo yum -y remove java-1.7.0-openjdk ( Used if older verion of java is exist)
+java -version
+
+# Accept the ElasticSearch PGP Key
+sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+# Create logstash.repo to install from RPM
+nano /etc/yum.repos.d/logstash.repo
+
+# Edit logstash.repo with following text
+echo '[logstash-6.x]
+name=Elastic repository for 6.x packages
+baseurl=https://artifacts.elastic.co/packages/6.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+' | sudo tee /etc/yum.repos.d/elasticsearch.repo
+
+# Install from RPM Repo
+sudo yum -y install logstash
+
+# Collect all files with .log extention in /var/log, /var/log/messages
+echo 'input {
+  file {
+    path => [ "/var/log/*.log", "/var/log/messages", "/var/log/syslog" ]
+    type => "syslog"
+  }
+}
+output {
+    elasticsearch {
+        hosts => ["ec2-18-197-147-233.eu-central-1.compute.amazonaws.com:9200"]
+    }
+    #stdout { codec => rubydebug }
+}' | sudo tee /etc/logstash/conf.d/logstash-syslog.conf
+
+
+# Filter configuration
+echo 'filter {
+  if [type] == "syslog" {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+      add_field => [ "received_at", "%{@timestamp}" ]
+      add_field => [ "received_from", "%{host}" ]
+    }
+    date {
+      match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+    }
+  }
+}' | sudo tee /etc/logstash/conf.d/logstash-syslog-filter.conf
+
+
+# Channging Ownership and Permission of Logstash
+chgrp logstash /var/log/*.log /var/log/messages
+chmod g+r /var/log/*.log /var/log/messages
+
+# Logstash to run as service
+/usr/share/logstash/bin/system-install /etc/logstash/startup.options sysv
+sudo chkconfig --add logstash
+
+# Starting Logstash 
+sudo -i service logstash start
+/usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/ &
+
+# Stopping Logstash 
+sudo -i service logstash stop
+
+# Checking Logstash logs
+tail -f /var/log/logstash-stdout.log
