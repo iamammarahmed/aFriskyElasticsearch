@@ -1,0 +1,50 @@
+####################################################
+       Conneting Elasticsearch with Cloudera Hive
+####################################################
+
+************************ ELASTICSEARCH NODE************************************************
+
+
+# Go to /etc/hosts
+sudo vi /etc/hosts
+
+# Type private IP of Elasticsearch cluster nodes and give name as string
+172.31.38.63 node1
+
+# Go to /etc/elasticsearch/elasticsearch.yml
+sudo vi /etc/elasticsearch/elasticsearch.yml
+
+# Replace node.name property
+node.name: node1 {Else you have to provide private IP address of elasticsearch node}
+
+# Replace network.host property
+network.host: node1 {Else you have to provide private IP address of elasticsearch node}
+
+
+
+************************ CLOUDERA EDGE NODE ************************************************
+
+# Go to Hive using hive/beeline cli
+hive
+
+# Add jar files for ES-Hadoop
+{Note: Location must be Linux system directory}
+ADD JAR /home/ubuntu/elasticsearch-hadoop-6.5.3/dist/elasticsearch-hadoop-6.5.3.jar
+
+# Create database in hive
+CREATE DATABASE elastic;
+USE elsatic;
+
+# Create database table in Database
+
+CREATE EXTERNAL TABLE artists (
+    id      BIGINT,
+    name    STRING,
+    links   STRUCT<url:STRING, picture:STRING>)
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.resource' = 'radio/artists','es.nodes' = 'node1');
+
+
+
+
+
